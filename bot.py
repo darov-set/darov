@@ -49,12 +49,3 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.PHOTO, process_photo))
 print("🚀 Бот запущен!")
 app.run_polling()
-```
-
-И добавьте в `requirements.txt`:
-```
-python-telegram-bot
-rembg
-Pillow
-onnxruntime
-flask
