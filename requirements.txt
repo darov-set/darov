@@ -2,3 +2,4 @@ python-telegram-bot
 rembg
 Pillow
 onnxruntime
+flask
