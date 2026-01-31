@@ -1,19 +1,20 @@
 import logging
 import os
-import time
 from io import BytesIO
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 from rembg import remove
 from PIL import Image
-from flask import Flask
-from threading import Thread
+from flask import Flask, request
+import asyncio
 
 logging.basicConfig(level=logging.INFO)
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
+PORT = int(os.environ.get('PORT', 10000))
 
 app_flask = Flask(__name__)
+bot_app = Application.builder().token(BOT_TOKEN).build()
 
 @app_flask.route('/')
 def home():
@@ -21,12 +22,14 @@ def home():
 
 @app_flask.route('/health')
 def health():
-    return "OK"
+    return "OK", 200
 
-def run_flask():
-    port = int(os.environ.get('PORT', 10000))
-    print(f"Starting Flask on port {port}")
-    app_flask.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+@app_flask.route(f'/{BOT_TOKEN}', methods=['POST'])
+def webhook():
+    json_data = request.get_json(force=True)
+    update = Update.de_json(json_data, bot_app.bot)
+    asyncio.run(bot_app.process_update(update))
+    return "OK"
 
 async def start(update: Update, context):
     await update.message.reply_text("👋 Отправь мне фото, я удалю фон!")
@@ -68,15 +71,18 @@ async def handle_document(update: Update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка: {e}")
 
-print("Starting Flask server...")
-flask_thread = Thread(target=run_flask, daemon=True)
-flask_thread.start()
-time.sleep(2)
+bot_app.add_handler(CommandHandler("start", start))
+bot_app.add_handler(MessageHandler(filters.PHOTO, process_photo))
+bot_app.add_handler(MessageHandler(filters.Document.IMAGE, handle_document))
 
-print("Starting Telegram bot...")
-app = Application.builder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.PHOTO, process_photo))
-app.add_handler(MessageHandler(filters.Document.IMAGE, handle_document))
-print("🚀 Бот запущен!")
-app.run_polling()
+async def setup_webhook():
+    webhook_url = os.environ.get('RENDER_EXTERNAL_URL')
+    if webhook_url:
+        await bot_app.bot.set_webhook(url=f"{webhook_url}/{BOT_TOKEN}")
+        print(f"Webhook set to {webhook_url}/{BOT_TOKEN}")
+    await bot_app.initialize()
+
+asyncio.run(setup_webhook())
+
+print(f"🚀 Бот запущен на порту {PORT}!")
+app_flask.run(host='0.0.0.0', port=PORT)
