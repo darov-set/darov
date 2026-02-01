@@ -6,7 +6,7 @@ import os
 import requests
 
 logging.basicConfig(level=logging.INFO)
-BOT_TOKEN = os.environ.get('8240254491:AAE-xIqsQB_eeZpR3uECgT0RuAWM8kRJpCM')
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Отправь фото!")
