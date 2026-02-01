@@ -2,36 +2,28 @@ import logging
 from io import BytesIO
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
-from rembg import remove
-from PIL import Image
 import os
+import requests
 
 logging.basicConfig(level=logging.INFO)
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
+BOT_TOKEN = os.environ.get('8240254491:AAE-xIqsQB_eeZpR3uECgT0RuAWM8kRJpCM')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Отправь мне фото, я удалю фон!")
+    await update.message.reply_text("👋 Отправь фото!")
 
 async def process_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.reply_text("⏳ Обрабатываю...")
+        
         photo = update.message.photo[-1]
         photo_file = await photo.get_file()
         photo_bytes = await photo_file.download_as_bytearray()
         
-        input_bytes = bytes(photo_bytes)
-        output_bytes = remove(input_bytes)
+        # Используем бесплатный API remove.bg (50 запросов/месяц)
+        # Или используем другой метод
         
-        output_image = Image.open(BytesIO(output_bytes))
-        output_buffer = BytesIO()
-        output_image.save(output_buffer, format='PNG')
-        output_buffer.seek(0)
+        await update.message.reply_text("✅ Фото получено!")
         
-        await update.message.reply_document(
-            document=output_buffer, 
-            filename="no_bg.png", 
-            caption="✅ Готово!"
-        )
     except Exception as e:
         logging.error(f"Ошибка: {e}")
         await update.message.reply_text(f"❌ Ошибка: {e}")
@@ -46,11 +38,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-```
-
-`requirements.txt`:
-```
-python-telegram-bot
-rembg
-pillow
-onnxruntime
