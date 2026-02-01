@@ -1,5 +1,5 @@
-python-telegram-bot
-rembg
-Pillow
-onnxruntime
-flask
+python-telegram-bot==21.10
+rembg==2.0.72
+pillow==10.2.0
+onnxruntime==1.19.2
+numpy<2.0.0
